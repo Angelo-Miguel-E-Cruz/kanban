@@ -1,103 +1,189 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from "react"
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Items and Column Types
+  // TODO: 1. Refine and check
+  type Items = {
+    id: string,
+    content: string
+  }
+
+  type Column = {
+    id: number,
+    name: string,
+    items: Items[]
+  }
+
+  type DraggedItem = {
+    columnId: number,
+    item: Items
+  }
+
+
+  // Columns
+  // TODO: 1. Make them customizable (ie. name, how many columns, etc.)
+  // 2. Retain items through refresh (using supabase?)
+  const [columns, setColumns] = useState<Column[]>([
+    {
+      id: 1,
+      name: "To Do",
+      items: [
+        { id: "1", content: "1" },
+        { id: "2", content: "2" }
+      ]
+    },
+    {
+      id: 2,
+      name: "In Progress",
+      items: [
+        { id: "3", content: "3" }
+      ]
+    },
+    {
+      id: 3,
+      name: "Done",
+      items: [
+        { id: "4", content: "4" }
+      ]
+    }
+  ])
+
+  const [newTask, setNewTask] = useState("")
+  const [activeColId, setActiveColId] = useState<number>(0);
+  const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null)
+
+  const addNewTask = () => {
+    if (newTask.trim() === "") return
+
+    const updatedColumns: Column[] = { ...columns }
+
+    updatedColumns[activeColId].items.push({
+      id: Date.now().toString(),
+      content: newTask
+    })
+
+    setColumns(updatedColumns)
+    setNewTask("")
+  }
+
+  const setActiveCol = (columnId: string) => {
+    const colId = parseInt(columnId, 10)
+    setActiveColId(colId)
+  }
+
+  const removeTask = (columnId: number, taskId: string) => {
+    const updatedColumns: Column[] = { ...columns }
+
+    updatedColumns[columnId].items = updatedColumns[columnId].items.filter((item) => item.id !== taskId)
+
+    setColumns(updatedColumns)
+  }
+
+  const handleDragStart = (columnId: number, item: Items) => {
+    setDraggedItem({ columnId, item })
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, columnId: number) => {
+    e.preventDefault()
+
+    if (!draggedItem) return
+
+    const { columnId: sourceColumnId, item } = draggedItem
+
+    if (sourceColumnId === columnId) return
+
+    const updatedColumns = { ...columns }
+
+    updatedColumns[sourceColumnId].items = updatedColumns[sourceColumnId].items.filter((i) => i.id != item.id)
+
+    updatedColumns[columnId].items.push(item)
+
+    setColumns(updatedColumns)
+    setDraggedItem(null)
+  }
+
+  return (
+    <main>
+      <div className="p-6 w-full min-h-screen bg-gradient-to-b from-zinc-900 to-zinc-800 flex items-center justify-center">
+        <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
+          <h1 className="text-6xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">React Kanban Board</h1>
+
+          <div className="mb-8 flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
+            <input
+              type="text"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              placeholder="Add a new task..."
+              className="flex-grow p-3 bg-zinc-700 text-white"
+              onKeyDown={(e) => e.key === "Enter" && addNewTask()} />
+
+            <select
+              value={activeColId}
+              onChange={(e) => setActiveCol(e.target.value)}
+              className="p-3 bg-zinc-700 text-white border-0 border-l border-zinc-600">
+              {Object.keys(columns).map((columnId, index) => (
+                <option value={columnId} key={columnId}> {columns[index].name} </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => addNewTask()}
+              className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
+              font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
+              duration-200 cursor-pointer">
+              Add
+            </button>
+          </div>
+
+          <div className="flex gap-6 overflow-x-auto pb-6 w-full justify-center">
+            {Object.keys(columns).map((columnId, index) => (
+              <div
+                key={columnId}
+                className="flex flex-col shrink-0 w-80 bg-zinc-800 rounded-lg shadow-xl border-t-4"
+                onDragOver={(e) => handleDragOver(e)}
+                onDrop={(e) => handleDrop(e, index)}>
+
+                <div
+                  className="p-4 text-white font-bold text-xl rounded-t-md w-full">
+                  {columns[index].name}
+                  <span className="ml-2 px-2 py-1 bg-gradient-to-bl from-green-700 to-green-500 bg-opacity-30 rounded-full text-sm">{columns[index].items.length}</span>
+                </div>
+
+                {/* overflow or no overflow?*/}
+                <div className="p-3 min-h-64">
+                  {columns[index].items.length === 0 ? (
+                    <div className="text-center py-10 text-zinc-500 italic text-sm"> Drop Tasks Here</div>
+                  ) : (
+                    columns[index].items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-move
+                        flex items-center justify-between transform transition-all duration-200
+                        hover:scale-105 hover:shadow-lg"
+                        draggable onDragStart={() => handleDragStart(index, item)}>
+                        <span className="mr-2">{item.content}</span>
+                        <button
+                          onClick={() => removeTask(index, item.id)}
+                          className="text-zinc-400 hover:text-red-400 transform-colors duration-200
+                          w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-600">
+                          <span className="text-lg cursor-pointer"> x</span>
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      </div>
+    </main>
+  )
 }
