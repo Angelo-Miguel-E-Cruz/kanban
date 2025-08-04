@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Modal from "../components/modal"
 
 export default function Home() {
 
@@ -25,6 +26,7 @@ export default function Home() {
 
   // Columns
   // TODO: 1. Make them customizable (ie. name, how many columns, etc.)
+  // ^^ start from 0 columns then create board
   // 2. Retain items through refresh (using supabase?)
   const [columns, setColumns] = useState<Column[]>([
     {
@@ -52,8 +54,10 @@ export default function Home() {
   ])
 
   const [newTask, setNewTask] = useState("")
+  const [newColumn, setNewColumn] = useState("")
   const [activeColId, setActiveColId] = useState<number>(0);
   const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const addNewTask = () => {
     if (newTask.trim() === "") return
@@ -109,40 +113,72 @@ export default function Home() {
     setDraggedItem(null)
   }
 
+  const addNewColumn = () => {
+    if (newColumn.trim() === "") {
+      setIsModalOpen(false)
+      return
+    }
+
+    const newColID = columns.length
+    const newCol: Column = {
+      id: newColID + 1,
+      name: newColumn,
+      items: []
+    }
+
+    setColumns([...columns, newCol])
+    setNewColumn("")
+    setIsModalOpen(false)
+  }
+
   return (
     <main>
       <div className="p-6 w-full min-h-screen bg-gradient-to-b from-zinc-900 to-zinc-800 flex items-center justify-center">
         <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
           <h1 className="text-6xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">React Kanban Board</h1>
 
-          <div className="mb-8 flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
-            <input
-              type="text"
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              placeholder="Add a new task..."
-              className="flex-grow p-3 bg-zinc-700 text-white"
-              onKeyDown={(e) => e.key === "Enter" && addNewTask()} />
+          {/* Add new task / Add column Area */}
+          <div className="mb-8 flex gap-4">
+            <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
+              <input
+                type="text"
+                value={newTask}
+                onChange={(e) => setNewTask(e.target.value)}
+                placeholder="Add a new task..."
+                className="flex-grow p-3 bg-zinc-700 text-white"
+                onKeyDown={(e) => e.key === "Enter" && addNewTask()} />
 
-            <select
-              value={activeColId}
-              onChange={(e) => setActiveCol(e.target.value)}
-              className="p-3 bg-zinc-700 text-white border-0 border-l border-zinc-600">
-              {Object.keys(columns).map((columnId, index) => (
-                <option value={columnId} key={columnId}> {columns[index].name} </option>
-              ))}
-            </select>
+              <select
+                value={activeColId}
+                onChange={(e) => setActiveCol(e.target.value)}
+                className="p-3 bg-zinc-700 text-white border-0 border-l border-zinc-600">
+                {Object.keys(columns).map((columnId, index) => (
+                  <option value={columnId} key={columnId}> {columns[index].name} </option>
+                ))}
+              </select>
 
-            <button
-              onClick={() => addNewTask()}
-              className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
+              <button
+                onClick={() => addNewTask()}
+                className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
               font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
               duration-200 cursor-pointer">
-              Add
+                Add
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-6 rounded-lg bg-gradient-to-r from-red-500 to-rose-400 text-white 
+              font-medium hover:from-red-400 hover:to-rose-400 transition-all
+              duration-200 cursor-pointer">
+              Add Column
             </button>
           </div>
 
+          {/* Board Area */}
           <div className="flex gap-6 overflow-x-auto pb-6 w-full justify-center">
+            {/* Column */}
+            {/* TODO: 1. Make into separate component */}
             {Object.keys(columns).map((columnId, index) => (
               <div
                 key={columnId}
@@ -156,7 +192,9 @@ export default function Home() {
                   <span className="ml-2 px-2 py-1 bg-gradient-to-bl from-green-700 to-green-500 bg-opacity-30 rounded-full text-sm">{columns[index].items.length}</span>
                 </div>
 
-                {/* overflow or no overflow?*/}
+                {/* Cards/Items */}
+                {/* TODO: 1. Make into separate component */}
+                {/* 2. Overflow or no overflow? */}
                 <div className="p-3 min-h-64">
                   {columns[index].items.length === 0 ? (
                     <div className="text-center py-10 text-zinc-500 italic text-sm"> Drop Tasks Here</div>
@@ -184,6 +222,31 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
+          <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">Add Column</h1>
+          <div className="mb-8 flex gap-4">
+            <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
+              <input
+                type="text"
+                value={newColumn}
+                onChange={(e) => setNewColumn(e.target.value)}
+                placeholder="Add a new column..."
+                className="flex-grow p-3 bg-zinc-700 text-white"
+                onKeyDown={(e) => e.key === "Enter" && addNewColumn()} />
+
+              <button
+                onClick={() => addNewColumn()}
+                className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
+                font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
+                duration-200 cursor-pointer">
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </main>
   )
 }
