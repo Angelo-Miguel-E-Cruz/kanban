@@ -115,7 +115,15 @@ export default function Home() {
   }
 
   const addNewColumn = () => {
+    // Check if no new column name
     if (newColumn.trim() === "") {
+      setIsAddModalOpen(false)
+      return
+    }
+
+    // Check if column of same name already exists
+    if (columns.some((column) => { column.name === newColumn })) {
+      console.log("Column already exists") // TODO: 1. Change to toast
       setIsAddModalOpen(false)
       return
     }
