@@ -57,7 +57,8 @@ export default function Home() {
   const [newColumn, setNewColumn] = useState("")
   const [activeColId, setActiveColId] = useState<number>(0);
   const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false)
 
   const addNewTask = () => {
     if (newTask.trim() === "") return
@@ -115,7 +116,7 @@ export default function Home() {
 
   const addNewColumn = () => {
     if (newColumn.trim() === "") {
-      setIsModalOpen(false)
+      setIsAddModalOpen(false)
       return
     }
 
@@ -128,7 +129,16 @@ export default function Home() {
 
     setColumns([...columns, newCol])
     setNewColumn("")
-    setIsModalOpen(false)
+    setIsAddModalOpen(false)
+  }
+
+  const removeColumn = () => {
+    let updatedColumns = [...columns]
+
+    updatedColumns = updatedColumns.filter((column) => column.id !== activeColId + 1)
+
+    setColumns(updatedColumns)
+    setIsRemoveModalOpen(false)
   }
 
   return (
@@ -167,11 +177,19 @@ export default function Home() {
             </div>
 
             <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-6 rounded-lg bg-gradient-to-r from-red-500 to-rose-400 text-white 
-              font-medium hover:from-red-400 hover:to-rose-400 transition-all
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-6 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
+              font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
               duration-200 cursor-pointer">
               Add Column
+            </button>
+
+            <button
+              onClick={() => setIsRemoveModalOpen(true)}
+              className="px-6 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
+              font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
+              duration-200 cursor-pointer">
+              Remove Column
             </button>
           </div>
 
@@ -223,7 +241,7 @@ export default function Home() {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)}>
         <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
           <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">Add Column</h1>
           <div className="mb-8 flex gap-4">
@@ -242,6 +260,33 @@ export default function Home() {
                 font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
                 duration-200 cursor-pointer">
                 Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isRemoveModalOpen} onClose={() => setIsRemoveModalOpen(false)}>
+        <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
+          <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">Remove Column</h1>
+          <div className="mb-8 flex gap-4">
+            <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
+
+              <select
+                value={activeColId}
+                onChange={(e) => setActiveCol(e.target.value)}
+                className="p-3 bg-zinc-700 text-white border-0 border-l border-zinc-600">
+                {Object.keys(columns).map((columnId, index) => (
+                  <option value={columnId} key={columnId}> {columns[index].name} </option>
+                ))}
+              </select>
+
+              <button
+                onClick={() => removeColumn()}
+                className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
+                font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
+                duration-200 cursor-pointer">
+                Remove
               </button>
             </div>
           </div>
