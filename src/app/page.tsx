@@ -1,9 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import Modal from "../components/modal"
+import Modal from "../components/Modals/modal"
 import { MdOutlineModeEditOutline } from "react-icons/md"
 import { colors } from "../utilities/exports"
+import AddColumn from "@/components/Modals/AddColumnModal"
+import AddBoard from "@/components/Modals/AddBoardModal"
+import EditColumn from "@/components/Modals/EditColumnModal"
 
 // SSG Memoization
 
@@ -11,12 +14,12 @@ export default function Home() {
 
   // Items and Column Types
   // TODO: 1. Refine and check
-  type Items = {
+  interface Items {
     id: string,
     content: string
   }
 
-  type Column = {
+  interface Column {
     id: number,
     name: string,
     items: Items[],
@@ -24,14 +27,14 @@ export default function Home() {
     to: string
   }
 
-  type Board = {
+  interface Board {
     id: number,
     name: string,
     columnNumber: number,
     columns: Column[]
   }
 
-  type DraggedItem = {
+  interface DraggedItem {
     columnId: number,
     item: Items
   }
@@ -44,10 +47,11 @@ export default function Home() {
   const [boards, setBoards] = useState<Board[]>([])
 
   // States
-  // TODO: 1. useStateProvider
+  // TODO: 1. useReducer
   const [newTask, setNewTask] = useState("")
   const [newColumn, setNewColumn] = useState("")
   const [newBoard, setNewBoard] = useState("")
+
   const [activeBoard, setActiveBoard] = useState<number | null>(null)
   const [colNum, setColNum] = useState(1)
   const [colNames, setColNames] = useState<string[]>([""])
@@ -70,12 +74,16 @@ export default function Home() {
       return
     }
 
-    const updatedColumns: Column[] = { ...columns }
-
-    updatedColumns[activeColId].items.push({
+    const newItem: Items = {
       id: Date.now().toString(),
       content: newTask
-    })
+    }
+
+    const updatedColumns = columns.map(column =>
+      column.id === activeColId
+        ? { ...column, item: [...column.items, newItem] }
+        : column
+    )
 
     setColumns(updatedColumns)
     setNewTask("")
@@ -291,6 +299,16 @@ export default function Home() {
     setEditColumnModal(false)
   }
 
+  const handleChangeBoard = () => {
+
+    const updatedBoards = boards.map((board, id) =>
+      id === activeBoard ? { ...board, columns: columns } : board)
+
+    console.log(updatedBoards)
+    setBoards(updatedBoards)
+    setActiveBoard(null)
+  }
+
   return (
     <main>
       <div className="p-6 w-full min-h-screen bg-gradient-to-b from-zinc-900 to-zinc-800 flex items-center justify-center">
@@ -336,7 +354,7 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => setActiveBoard(null)}
+                onClick={() => handleChangeBoard()}
                 className="px-6 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
               font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
               duration-200 cursor-pointer">
@@ -451,132 +469,31 @@ export default function Home() {
       </div>
 
       {/* Add column modal */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)}>
-        <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
-          <h1 className="text-3xl font-bold mb-2 text-yellow-500">Add Column</h1>
-          <div className="mb-8 flex flex-col gap-4">
-            <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
-              <input
-                type="text"
-                value={newColumn}
-                onChange={(e) => setNewColumn(e.target.value)}
-                placeholder="Add a new column..."
-                className="flex-grow p-3 bg-zinc-700 text-white"
-                onKeyDown={(e) => e.key === "Enter" && addNewColumn()} />
-
-              <button
-                onClick={() => addNewColumn()}
-                className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
-                font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
-                duration-200 cursor-pointer">
-                Add
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <h1 className="text-sm font-medium text-white">Color</h1>
-              <div className="grid grid-cols-4 gap-4 justify-items-center ">
-                {colors.map((color) => (
-                  <button
-                    key={color.class}
-                    onClick={() => setSelectedColor(color.name)}
-                    className={`w-12 h-12 rounded-lg transition-all duration-200 hover:scale-110 focus:scale-110 cursor-pointer ${color.class}
-                    ${selectedColor === color.name ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""}
-                    `}
-                    aria-label={`Select ${color.name} color`}>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <AddColumn
+        isOpen={isAddModalOpen}
+        selectedColor={selectedColor}
+        onClose={setIsAddModalOpen}
+        inputValue={newColumn}
+        onInputChange={setNewColumn}
+        onPress={addNewColumn}
+        setColor={setSelectedColor} />
 
       {/* Add board modal */}
-      <Modal isOpen={addBoardModal} onClose={() => setAddBoardModal(false)}>
-        <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
-          <h1 className="text-3xl font-bold mb-2 text-yellow-500">Add New Board</h1>
-          <div className="flex gap-4">
-            <div className="flex flex-col w-full max-w-lg overflow-hidden">
-              <div className="flex my-4 mr-2 items-center">
-                <h1 className="mr-4 text-center">Board Name</h1>
-                <input
-                  type="text"
-                  value={newBoard}
-                  onChange={(e) => setNewBoard(e.target.value)}
-                  placeholder="Board Name"
-                  className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg"
-                  onKeyDown={(e) => e.key === "Enter" && addNewBoard()} />
-              </div>
-
-              <div className="flex mb-2 mr-2 items-center">
-                <h1 className="mr-4 text-center">Number of Columns</h1>
-                <input
-                  type="number"
-                  value={colNum}
-                  min={1}
-                  onChange={(e) => handleNewBoardColumns(Number(e.target.value))}
-                  className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg" />
-              </div>
-
-              <div className="flex flex-col max-h-45 pt-2 overflow-y-auto">
-                {colNames.map((column, index) => (
-                  <div className="flex mb-4 mr-2 items-center" key={index}>
-                    <h1 className="mr-4 text-center">Column No. {index + 1} Name</h1>
-                    <input
-                      type="text"
-                      value={colNames[index]}
-                      onChange={(e) => {
-                        const newNames = [...colNames]
-                        newNames[index] = e.target.value
-                        setColNames(newNames)
-                      }}
-                      placeholder={`Column No. ${index + 1} Name`}
-                      className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg mr-2" />
-
-                    <div
-                      className={`w-11 h-11 rounded-lg cursor-pointer ${colColors[index]}`}
-                      onClick={() => setOpenColPicker(openColPicker === index ? null : index)}>
-                      {openColPicker === index &&
-                        <div className="absolute bottom-37 right-0 bg-zinc-900 p-2 rounded-lg border-1 border-zinc-800 z-10 grid grid-cols-4 gap-2">
-                          {colors.map((color, count) => (
-                            <div
-                              key={count}
-                              onClick={() => {
-                                const newColors = [...colColors]
-                                newColors[index] = color.class
-                                setColColors(newColors)
-                              }}
-                              className={`w-8 h-8 rounded cursor-pointer ${color.class}
-                              ${colColors[index] === color.class ? "ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110" : ""}`} />
-                          ))}
-                        </div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={() => addNewBoard()}
-                  className="py-3 px-4 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
-                  font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
-                  duration-200 cursor-pointer rounded-lg">
-                  Confirm
-                </button>
-
-                <button
-                  onClick={() => handleResetNewBoard()}
-                  className="py-3 px-4 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
-                  font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
-                  duration-200 cursor-pointer rounded-lg ml-2">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <AddBoard
+        isOpen={addBoardModal}
+        onClose={setAddBoardModal}
+        inputValue={newBoard}
+        onInputChange={setNewBoard}
+        onPress={addNewBoard}
+        onReset={handleResetNewBoard}
+        columnNumber={colNum}
+        columnNames={colNames}
+        columnColors={colColors}
+        openColPicker={openColPicker!}
+        setColumnNames={setColNames}
+        setColumnColors={setColColors}
+        setOpenColPicker={setOpenColPicker}
+        handleNewBoardColumns={handleNewBoardColumns} />
 
       {/* Edit board modal */}
       <Modal isOpen={editBoardModal} onClose={() => setEditBoardModal(false)}>
@@ -586,47 +503,14 @@ export default function Home() {
       </Modal>
 
       {/* Edit column modal */}
-      <Modal isOpen={editColumnModal} onClose={() => setEditColumnModal(false)}>
-        <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
-          <h1 className="text-3xl font-bold mb-2 text-yellow-500">Edit Column</h1>
-          <div className="mb-8 flex flex-col gap-4">
-            <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
-              <input
-                type="text"
-                value={editColumnName}
-                onChange={(e) => setEditColumnName(e.target.value)}
-                placeholder="Enter new name..."
-                className="flex-grow p-3 bg-zinc-700 text-white"
-                onKeyDown={(e) => e.key === "Enter" && editColumn()} />
-
-              <button
-                onClick={() => editColumn()}
-                className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
-                font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
-                duration-200 cursor-pointer">
-                Confirm
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <h1 className="text-sm font-medium text-white">Color</h1>
-              <div className="grid grid-cols-4 gap-4 justify-items-center ">
-                {colors.map((color) => (
-                  <button
-                    key={color.class}
-                    onClick={() => setSelectedColor(color.from)}
-                    className={`w-12 h-12 rounded-lg transition-all duration-200 hover:scale-110 focus:scale-110 cursor-pointer ${color.class}
-                    ${selectedColor === color.from ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""}
-                    `}
-                    aria-label={`Select ${color.name} color`}>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
-
+      <EditColumn
+        isOpen={editColumnModal}
+        onClose={setEditColumnModal}
+        inputValue={editColumnName}
+        onInputChange={setEditColumnName}
+        onPress={editColumn}
+        selectedColor={selectedColor}
+        setColor={setSelectedColor} />
     </main>
   )
 }
