@@ -6,9 +6,8 @@ import { colors, Items, Column, Board } from "../utilities/exports"
 import AddColumn from "@/components/Modals/AddColumnModal"
 import AddBoard from "@/components/Modals/AddBoardModal"
 import EditColumn from "@/components/Modals/EditColumnModal"
-import Task from "@/components/Board/Task"
 import ColumnComponent from "@/components/Board/Column"
-import { MdOutlineModeEditOutline } from "react-icons/md"
+import Button from "@/components/Utils/Button"
 
 
 export default function Home() {
@@ -319,30 +318,19 @@ export default function Home() {
                   ))}
                 </select>
 
-                <button
-                  onClick={() => addNewTask()}
-                  className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white 
-                  font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
-                  duration-200 cursor-pointer">
-                  Add
-                </button>
+                <Button
+                  text="Add"
+                  action={addNewTask} />
+
               </div>
 
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="px-6 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
-              font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
-              duration-200 cursor-pointer">
-                Add Column
-              </button>
+              <Button
+                text="Add Column"
+                action={setIsAddModalOpen} />
 
-              <button
-                onClick={() => handleChangeBoard()}
-                className="px-6 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
-              font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
-              duration-200 cursor-pointer">
-                Change Board
-              </button>
+              <Button
+                text="Change Board"
+                action={handleChangeBoard} />
             </div>
           )}
 
