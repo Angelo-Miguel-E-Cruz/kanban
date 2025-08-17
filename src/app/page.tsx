@@ -8,8 +8,6 @@ import AddColumn from "@/components/Modals/AddColumnModal"
 import AddBoard from "@/components/Modals/AddBoardModal"
 import EditColumn from "@/components/Modals/EditColumnModal"
 
-// SSG Memoization
-
 export default function Home() {
 
   // Items and Column Types
@@ -79,9 +77,9 @@ export default function Home() {
       content: newTask
     }
 
-    const updatedColumns = columns.map(column =>
-      column.id === activeColId
-        ? { ...column, item: [...column.items, newItem] }
+    const updatedColumns: Column[] = columns.map((column, index) =>
+      index === activeColId
+        ? { ...column, items: [...column.items, newItem] }
         : column
     )
 
@@ -212,11 +210,13 @@ export default function Home() {
 
     if (sourceColumnId === columnId) return
 
-    const updatedColumns = { ...columns }
-
-    updatedColumns[sourceColumnId].items = updatedColumns[sourceColumnId].items.filter((i) => i.id != item.id)
-
-    updatedColumns[columnId].items.push(item)
+    const updatedColumns = columns.map((column, index) =>
+      index === columnId
+        ? { ...column, items: [...column.items, item] }
+        : index === sourceColumnId
+          ? { ...column, items: column.items.filter((i) => i.id != item.id) }
+          : column
+    )
 
     setColumns(updatedColumns)
     setDraggedItem(null)
@@ -290,8 +290,8 @@ export default function Home() {
     const newFrom = newColor!.from
     const newTo = newColor!.to
 
-    const updatedColumns = columns.map((col, id) =>
-      id === activeColId ? { ...col, name: editColumnName, from: newFrom, to: newTo } : col
+    const updatedColumns = columns.map((col, index) =>
+      index === activeColId ? { ...col, name: editColumnName, from: newFrom, to: newTo } : col
     )
 
     setColumns(updatedColumns)
@@ -301,8 +301,8 @@ export default function Home() {
 
   const handleChangeBoard = () => {
 
-    const updatedBoards = boards.map((board, id) =>
-      id === activeBoard ? { ...board, columns: columns } : board)
+    const updatedBoards = boards.map((board, index) =>
+      index === activeBoard ? { ...board, columns: columns } : board)
 
     console.log(updatedBoards)
     setBoards(updatedBoards)
