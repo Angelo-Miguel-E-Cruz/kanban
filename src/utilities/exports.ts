@@ -8,3 +8,23 @@ export const colors = [
   { name: "Purple", value: "#8b5cf6", class: "bg-purple-500", from: "from-purple-600", to: "to-purple-700" },
   { name: "Pink", value: "#ec4899", class: "bg-rose-400", from: "from-rose-400", to: "to-rose-500" },
 ]
+
+export interface Items {
+  id: string,
+  content: string
+}
+
+export interface Column {
+  id: number,
+  name: string,
+  items: Items[],
+  from: string,
+  to: string
+}
+
+export interface Board {
+  id: number,
+  name: string,
+  columnNumber: number,
+  columns: Column[]
+}

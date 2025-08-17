@@ -2,36 +2,18 @@
 
 import { useState } from "react"
 import Modal from "../components/Modals/modal"
-import { MdOutlineModeEditOutline } from "react-icons/md"
-import { colors } from "../utilities/exports"
+import { colors, Items, Column, Board } from "../utilities/exports"
 import AddColumn from "@/components/Modals/AddColumnModal"
 import AddBoard from "@/components/Modals/AddBoardModal"
 import EditColumn from "@/components/Modals/EditColumnModal"
+import Task from "@/components/Board/Task"
+import { MdOutlineModeEditOutline } from "react-icons/md"
+
 
 export default function Home() {
 
   // Items and Column Types
   // TODO: 1. Refine and check
-  interface Items {
-    id: string,
-    content: string
-  }
-
-  interface Column {
-    id: number,
-    name: string,
-    items: Items[],
-    from: string,
-    to: string
-  }
-
-  interface Board {
-    id: number,
-    name: string,
-    columnNumber: number,
-    columns: Column[]
-  }
-
   interface DraggedItem {
     columnId: number,
     item: Items
@@ -437,26 +419,11 @@ export default function Home() {
                         <div className="text-center py-10 text-zinc-500 italic text-sm"> Drop Tasks Here</div>
                       ) : (
                         columns[index].items.map((item) => (
-                          <div
-                            key={item.id}
-                            className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-move
-                            flex items-center justify-between transform transition-all duration-200
-                            hover:scale-105 hover:shadow-lg hover:bg-zinc-600"
-                            draggable onDragStart={() => handleDragStart(index, item)}>
-                            <span className="mr-2">{item.content}</span>
-                            <button
-                              onClick={() => console.log("Editing board...")}
-                              className="ml-auto text-zinc-400 hover:text-red-400 transform-colors duration-200
-                              w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-500">
-                              <MdOutlineModeEditOutline className="text-lg cursor-pointer" />
-                            </button>
-                            <button
-                              onClick={() => removeTask(index, item.id)}
-                              className="text-zinc-400 hover:text-red-400 transform-colors duration-200
-                              w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-500">
-                              <span className="text-lg cursor-pointer"> x</span>
-                            </button>
-                          </div>
+                          <Task key={item.id}
+                            index={index}
+                            item={item}
+                            handleDragStart={handleDragStart}
+                            removeTask={removeTask} />
                         ))
                       )}
                     </div>
