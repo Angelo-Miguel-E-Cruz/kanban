@@ -28,3 +28,93 @@ export interface Board {
   columnNumber: number,
   columns: Column[]
 }
+
+export interface DraggedItem {
+  columnId: number,
+  item: Items
+}
+
+export interface AppState {
+  boards: Board[]
+  activeBoard: number | null
+  columns: Column[]
+
+  modals: {
+    addBoard: boolean
+    editTask: boolean
+    addColumn: boolean
+    editColumn: boolean
+  }
+
+  forms: {
+    newTask: string
+    newColumn: string
+    newBoard: string
+    editColumnName: string
+  }
+
+  columnProps: {
+    number: number
+    names: string[]
+    colors: string[]
+  }
+
+  selectedColor: string
+  activeColId: number
+  draggedItem: DraggedItem | null
+}
+
+export const initialState: AppState = {
+  boards: [],
+  activeBoard: null,
+  columns: [],
+  modals: {
+    addBoard: false,
+    editTask: false,
+    addColumn: false,
+    editColumn: false
+  },
+
+  forms: {
+    newTask: "",
+    newColumn: "",
+    newBoard: "",
+    editColumnName: "",
+  },
+
+  columnProps: {
+    number: 1,
+    names: [""],
+    colors: [colors[0].class]
+  },
+
+  selectedColor: colors[0].name,
+  activeColId: 0,
+  draggedItem: null
+
+}
+
+export type Action =
+  // Modal actions
+  | { type: 'TOGGLE_MODAL'; payload: { modal: keyof AppState['modals']; isOpen?: boolean } }
+
+  // Form Actions
+  | { type: 'UPDATE_FORM'; payload: { form: keyof AppState['forms']; value: string } }
+  | { type: 'RESET_FORMS' }
+
+  // Boards Actions
+  | { type: 'SET_ACTIVE_BOARD'; payload: number | null }
+  | { type: 'ADD_BOARD'; payload: Board }
+
+  // Column Actions
+  | { type: 'SET_COLUMN_ON_START'; payload: number }
+  | { type: 'SET_COLUMN_ID'; payload: number }
+  | { type: 'SET_COLUMN'; payload: Column[] }
+  | { type: 'REMOVE_COLUMN'; payload: string }
+  | { type: 'SET_COLOR'; payload: string }
+  | { type: 'SET_COLUMN_PROPS'; payload: { type: keyof AppState['columnProps']; value: number | string[] | string } }
+
+  // Task Actions
+  | { type: 'ADD_TASK'; payload: { columnIndex: number; task: Items } }
+  | { type: 'REMOVE_TASK'; payload: { columnIndex: number; taskId: string } }
+  | { type: 'SET_DRAGGED_ITEM'; payload: DraggedItem | null }

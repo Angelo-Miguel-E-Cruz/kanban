@@ -1,28 +1,27 @@
 import Modal from "./modal"
-import { colors } from "@/utilities/exports"
+import { colors, Action, AppState } from "@/utilities/exports"
 
 interface AddColumnProps {
-  isOpen: boolean,
-  selectedColor: string,
-  onClose: (value: boolean) => void,
-  inputValue: string,
-  onInputChange: (text: string) => void
+  state: AppState
+  dispatch: (action: Action) => void
   onPress: () => void,
-  setColor: (color: string) => void
 }
 
 export default function AddColumn(
-  { isOpen, selectedColor, onClose, inputValue, onInputChange, onPress, setColor }: AddColumnProps) {
+  { state, dispatch, onPress }: AddColumnProps) {
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose(false)}>
+    <Modal isOpen={state.modals.addColumn} onClose={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addColumn', isOpen: false } })}>
       <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
         <h1 className="text-3xl font-bold mb-2 text-yellow-500">Add Column</h1>
         <div className="mb-8 flex flex-col gap-4">
           <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
             <input
               type="text"
-              value={inputValue}
-              onChange={(e) => onInputChange(e.target.value)}
+              value={state.forms.newColumn}
+              onChange={(e) => dispatch({
+                type: "UPDATE_FORM",
+                payload: { form: "newColumn", value: e.target.value }
+              })}
               placeholder="Add a new column..."
               className="flex-grow p-3 bg-zinc-700 text-white"
               onKeyDown={(e) => e.key === "Enter" && onPress()} />
@@ -42,9 +41,9 @@ export default function AddColumn(
               {colors.map((color) => (
                 <button
                   key={color.class}
-                  onClick={() => setColor(color.name)}
+                  onClick={() => dispatch({ type: 'SET_COLOR', payload: color.name })}
                   className={`w-12 h-12 rounded-lg transition-all duration-200 hover:scale-110 focus:scale-110 cursor-pointer ${color.class}
-                    ${selectedColor === color.name ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""}
+                    ${state.selectedColor === color.name ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""}
                     `}
                   aria-label={`Select ${color.name} color`}>
                 </button>

@@ -1,28 +1,21 @@
 import Modal from "./modal"
-import { colors } from "@/utilities/exports"
+import { colors, Action, AppState } from "@/utilities/exports"
 
 interface AddColumnProps {
-  isOpen: boolean,
-  onClose: (value: boolean) => void,
-  inputValue: string,
-  onInputChange: (text: string) => void
+  state: AppState
+  openColPicker: number,
+  dispatch: (action: Action) => void,
   onPress: () => void,
   onReset: () => void,
-  columnNumber: number,
-  columnNames: string[],
-  columnColors: string[],
-  openColPicker: number,
-  setColumnNames: (names: string[]) => void,
-  setColumnColors: (names: string[]) => void,
   setOpenColPicker: (value: number | null) => void,
   handleNewBoardColumns: (value: number) => void
 }
 
 export default function AddBoard(
-  { isOpen, onClose, inputValue, onInputChange, onPress, onReset, columnNumber, columnNames, columnColors, openColPicker,
-    setColumnNames, setColumnColors, setOpenColPicker, handleNewBoardColumns }: AddColumnProps) {
+  { state, dispatch, onPress, onReset, openColPicker, setOpenColPicker, handleNewBoardColumns }: AddColumnProps) {
+
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose(false)}>
+    <Modal isOpen={state.modals.addBoard} onClose={() => onReset()}>
       <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
         <h1 className="text-3xl font-bold mb-2 text-yellow-500">Add New Board</h1>
         <div className="flex gap-4">
@@ -31,8 +24,11 @@ export default function AddBoard(
               <h1 className="mr-4 text-center">Board Name</h1>
               <input
                 type="text"
-                value={inputValue}
-                onChange={(e) => onInputChange(e.target.value)}
+                value={state.forms.newBoard}
+                onChange={(e) => dispatch({
+                  type: "UPDATE_FORM",
+                  payload: { form: "newBoard", value: e.target.value }
+                })}
                 placeholder="Board Name"
                 className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg"
                 onKeyDown={(e) => e.key === "Enter" && onPress()} />
@@ -42,29 +38,29 @@ export default function AddBoard(
               <h1 className="mr-4 text-center">Number of Columns</h1>
               <input
                 type="number"
-                value={columnNumber}
+                value={state.columnProps.number}
                 min={1}
                 onChange={(e) => handleNewBoardColumns(Number(e.target.value))}
                 className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg" />
             </div>
 
             <div className="flex flex-col max-h-45 pt-2 overflow-y-auto">
-              {columnNames.map((_, index) => (
+              {state.columnProps.names.map((_, index) => (
                 <div className="flex mb-4 mr-2 items-center" key={index}>
                   <h1 className="mr-4 text-center">Column No. {index + 1} Name</h1>
                   <input
                     type="text"
-                    value={columnNames[index]}
+                    value={state.columnProps.names[index]}
                     onChange={(e) => {
-                      const newNames = [...columnNames]
+                      const newNames = [...state.columnProps.names]
                       newNames[index] = e.target.value
-                      setColumnNames(newNames)
+                      dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'names', value: newNames } })
                     }}
                     placeholder={`Column No. ${index + 1} Name`}
                     className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg mr-2" />
 
                   <div
-                    className={`w-11 h-11 rounded-lg cursor-pointer ${columnColors[index]}`}
+                    className={`w-11 h-11 rounded-lg cursor-pointer ${state.columnProps.colors[index]}`}
                     onClick={() => setOpenColPicker(openColPicker === index ? null : index)}>
                     {openColPicker === index &&
                       <div className="absolute bottom-37 right-0 bg-zinc-900 p-2 rounded-lg border-1 border-zinc-800 z-10 grid grid-cols-4 gap-2">
@@ -72,12 +68,12 @@ export default function AddBoard(
                           <div
                             key={count}
                             onClick={() => {
-                              const newColors = [...columnColors]
+                              const newColors = [...state.columnProps.colors]
                               newColors[index] = color.class
-                              setColumnColors(newColors)
+                              dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'colors', value: newColors } })
                             }}
                             className={`w-8 h-8 rounded cursor-pointer ${color.class}
-                              ${columnColors[index] === color.class ? "ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110" : ""}`} />
+                              ${state.columnProps.colors[index] === color.class ? "ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110" : ""}`} />
                         ))}
                       </div>}
                   </div>

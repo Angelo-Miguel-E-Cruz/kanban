@@ -1,134 +1,105 @@
 "use client"
 
-import { useState } from "react"
+import { useReducer, useState } from "react"
 import Modal from "../components/Modals/modal"
-import { colors, Items, Column, Board } from "../utilities/exports"
+import { colors, Items, Column, Board, DraggedItem, initialState } from "../utilities/exports"
 import AddColumn from "@/components/Modals/AddColumnModal"
 import AddBoard from "@/components/Modals/AddBoardModal"
 import EditColumn from "@/components/Modals/EditColumnModal"
 import ColumnComponent from "@/components/Board/Column"
-import Button from "@/components/Utils/Button"
-
+import Reducer from "@/utilities/reducer"
 
 export default function Home() {
 
-  // Items and Column Types
-  // TODO: 1. Refine and check
-  interface DraggedItem {
-    columnId: number,
-    item: Items
-  }
-
-  // Columns
-  // TODO: 1. Make them customizable (ie. name, how many columns, etc.)
-  // ^^ start from 0 columns then create board
-  // 2. Retain items through refresh (using supabase?)
-  const [columns, setColumns] = useState<Column[]>([])
-  const [boards, setBoards] = useState<Board[]>([])
-
-  // States
-  // TODO: 1. useReducer
-  const [newTask, setNewTask] = useState("")
-  const [newColumn, setNewColumn] = useState("")
-  const [newBoard, setNewBoard] = useState("")
-
-  const [activeBoard, setActiveBoard] = useState<number | null>(null)
-  const [colNum, setColNum] = useState(1)
-  const [colNames, setColNames] = useState<string[]>([""])
-  const [colColors, setColColors] = useState<string[]>([colors[0].class])
+  const [state, dispatch] = useReducer(Reducer, initialState)
   const [openColPicker, setOpenColPicker] = useState<number | null>(null)
-  const [activeColId, setActiveColId] = useState<number>(0);
-  const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null)
-  const [addBoardModal, setAddBoardModal] = useState(false)
-  const [editBoardModal, setEditBoardModal] = useState(false)
-  const [editColumnModal, setEditColumnModal] = useState(false)
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [selectedColor, setSelectedColor] = useState(colors[0].name)
-  const [editColumnName, setEditColumnName] = useState("")
 
   // Functions
   // TODO: 1. Put in own ts file?
   const addNewTask = () => {
-    if (newTask.trim() === "") {
+    if (state.forms.newTask.trim() === "") {
       console.log("No board name") // TODO: 1. Make Toast
       return
     }
 
     const newItem: Items = {
       id: Date.now().toString(),
-      content: newTask
+      content: state.forms.newTask
     }
 
-    const updatedColumns: Column[] = columns.map((column, index) =>
-      index === activeColId
+    const updatedColumns: Column[] = state.columns.map((column, index) =>
+      index === state.activeColId
         ? { ...column, items: [...column.items, newItem] }
         : column
     )
 
-    setColumns(updatedColumns)
-    setNewTask("")
+    dispatch({ type: "SET_COLUMN", payload: updatedColumns })
+    dispatch({ type: "RESET_FORMS" })
   }
 
   const addNewColumn = () => {
     // Check if no new column name
-    if (newColumn.trim() === "") {
+    if (state.forms.newColumn.trim() === "") {
       console.log("No column name") // TODO: 1. Make Toast
-      setIsAddModalOpen(false)
+      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addColumn', isOpen: false } })
       return
     }
 
     // Check if column of same name already exists
-    if (columns.some((column) => column.name === newColumn)) {
+    if (state.columns.some((column) => column.name === state.forms.newColumn)) {
       console.log("Column already exists") // TODO: 1. Change to toast
-      setIsAddModalOpen(false)
+      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addColumn', isOpen: false } })
       return
     }
 
-    const headerColor = colors.find((color) => color.name === selectedColor)
+    const headerColor = colors.find((color) => color.name === state.selectedColor)
     const fromColor = headerColor!.from
     const toColor = headerColor!.to
 
-    const newColID = columns.length
+    const newColID = state.columns.length
     const newCol: Column = {
       id: newColID + 1,
-      name: newColumn,
+      name: state.forms.newColumn,
       items: [],
       from: fromColor,
       to: toColor
     }
 
-    setColumns([...columns, newCol])
-    setNewColumn("")
-    setIsAddModalOpen(false)
+    const updatedColumns = [...state.columns, newCol]
+
+    dispatch({ type: 'SET_COLUMN', payload: updatedColumns })
+    dispatch({ type: "RESET_FORMS" })
+    dispatch({ type: 'SET_COLOR', payload: initialState.selectedColor })
+    dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addColumn', isOpen: false } })
   }
 
   const addNewBoard = () => {
     var validNewBoard = true
     // Check if no new board name
-    if (newBoard.trim() === "") {
+    if (state.forms.newBoard.trim() === "") {
       console.log("No board name") // TODO: 1. Make Toast
-      setAddBoardModal(false)
       validNewBoard = false
+      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
     }
 
     // Check if column of same name already exists
-    if (boards.some((board) => board.name === newBoard)) {
+    if (state.boards.some((board) => board.name === state.forms.newBoard)) {
       console.log("Board already exists") // TODO: 1. Change to toast
-      setAddBoardModal(false)
       validNewBoard = false
+      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
     }
 
     // Check if some column names are empty or just spaces
-    if (colNames.some(name => name.trim() === "")) {
+    if (state.columnProps.names.some(name => name.trim() === "")) {
       console.log("Column names can not be empty") // TODO: 1. Change to toast
-      setAddBoardModal(false)
       validNewBoard = false
+      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
     }
 
     if (validNewBoard) {
       var newCols: Column[] = []
-      colNames.map((name, index) => {
-        const colorObj = colors.find(c => c.class === colColors[index])
+      state.columnProps.names.map((name, index) => {
+        const colorObj = colors.find(c => c.class === state.columnProps.colors[index])
         const from = colorObj!.from
         const to = colorObj!.to
         const newCol: Column = {
@@ -142,153 +113,159 @@ export default function Home() {
       })
 
       const newB: Board = {
-        id: boards.length + 1,
-        name: newBoard,
-        columnNumber: colNum,
+        id: state.boards.length + 1,
+        name: state.forms.newBoard,
+        columnNumber: state.columnProps.number,
         columns: newCols
       }
-      setBoards((prev => [...prev, newB]))
+      dispatch({ type: 'ADD_BOARD', payload: newB })
     }
 
-    handleResetNewBoard()
+    dispatch({ type: 'RESET_FORMS' })
+    dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
   }
 
   const setActiveCol = (columnId: string) => {
     const colId = parseInt(columnId, 10)
-    setActiveColId(colId)
+    dispatch({ type: 'SET_COLUMN_ID', payload: colId })
   }
 
   const removeTask = (columnId: number, taskId: string) => {
-    const updatedColumns: Column[] = { ...columns }
+    const updatedColumns: Column[] = state.columns.map((column, index) =>
+      index === columnId
+        ? { ...column, items: column.items.filter((item) => item.id !== taskId) }
+        : column
+    )
 
-    updatedColumns[columnId].items = updatedColumns[columnId].items.filter((item) => item.id !== taskId)
-
-    setColumns(updatedColumns)
+    dispatch({ type: 'SET_COLUMN', payload: updatedColumns })
   }
 
   const removeColumn = (colName: string) => {
-    if (columns.length === 1) {
+    if (state.columns.length === 1) {
       console.log("Board must have at least 1 column") // TODO: 1. Make toast 
       return
     }
 
-    setColumns((columns.filter((column) => column.name !== colName)))
+    const updatedColumns = state.columns.filter((column) => column.name !== colName)
+    dispatch({ type: "SET_COLUMN", payload: updatedColumns })
+    dispatch({ type: "RESET_FORMS" })
   }
 
   const handleDragStart = (columnId: number, item: Items) => {
-    setDraggedItem({ columnId, item })
+    const draggedItem: DraggedItem = {
+      columnId: columnId,
+      item: item
+    }
+    dispatch({ type: 'SET_DRAGGED_ITEM', payload: draggedItem })
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
   }
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, columnId: number) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetColumnId: number) => {
     e.preventDefault()
 
-    if (!draggedItem) return
+    if (!state.draggedItem) return
 
-    const { columnId: sourceColumnId, item } = draggedItem
+    const { columnId: sourceColumnId, item } = state.draggedItem
 
-    if (sourceColumnId === columnId) return
+    if (sourceColumnId === targetColumnId) return
 
-    const updatedColumns = columns.map((column, index) =>
-      index === columnId
+    const updatedColumns = state.columns.map((column, index) =>
+      index === targetColumnId
         ? { ...column, items: [...column.items, item] }
         : index === sourceColumnId
           ? { ...column, items: column.items.filter((i) => i.id != item.id) }
           : column
     )
 
-    setColumns(updatedColumns)
-    setDraggedItem(null)
+    dispatch({ type: "SET_COLUMN", payload: updatedColumns })
+    dispatch({ type: "RESET_FORMS" })
+    dispatch({ type: 'SET_DRAGGED_ITEM', payload: null })
   }
 
   const handleNewBoardColumns = (num: number) => {
-    setColNum(num)
+    dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'number', value: num } })
 
-    setColNames((prev) => {
-      const newArr = [...prev]
-      if (num > prev.length) {
-        return [...newArr, ...Array(num - prev.length).fill("")];
-      } else {
-        return newArr.slice(0, num);
-      }
-    })
+    var columnArr = state.columnProps.names
 
-    setColColors((prev) => {
-      const newArr = [...prev]
-      if (num > prev.length) {
-        return [...newArr, ...Array(num - prev.length).fill(colors[0].class)];
-      } else {
-        return newArr.slice(0, num);
-      }
-    })
+    if (num > columnArr.length) {
+      columnArr = [...columnArr, ...Array(num - columnArr.length).fill("")]
+    } else {
+      columnArr = columnArr.slice(0, num)
+    }
+
+    dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'names', value: columnArr } })
+
+    var colorArr = state.columnProps.colors
+
+    if (num > colorArr.length) {
+      colorArr = [...colorArr, ...Array(num - colorArr.length).fill(colors[0].class)]
+    } else {
+      colorArr = colorArr.slice(0, num)
+    }
+
+    dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'colors', value: colorArr } })
   }
 
   const handleResetNewBoard = () => {
-    setNewBoard("")
-    setColNum(1)
-    setColNames([""])
-    setAddBoardModal(false)
+    dispatch({ type: 'RESET_FORMS' })
+    dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'names', value: [""] } })
+    dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
     setOpenColPicker(null)
-    setColColors(prev => {
-      const reset = [...prev]
-      reset[0] = colors[0].class
-      return reset.slice(0, 1)
-    })
   }
 
   const openBoard = (boardID: number) => {
-    setColumns(boards[boardID - 1].columns)
-    setActiveBoard(boardID)
+    dispatch({ type: 'SET_COLUMN_ON_START', payload: boardID })
+    dispatch({ type: "SET_ACTIVE_BOARD", payload: boardID })
   }
 
   const handleEditColumn = (columnID: number) => {
-    const columnColor: string = colors.find((color) => color.from === columns[columnID].from)!.from
+    const columnColor: string = colors.find((color) => color.from === state.columns[columnID].from)!.name
 
-    setEditColumnName(columns[columnID].name)
-    setSelectedColor(columnColor)
-    setActiveColId(columnID)
-    setEditColumnModal(true)
+    dispatch({ type: 'UPDATE_FORM', payload: { form: 'editColumnName', value: state.columns[columnID].name } })
+    dispatch({ type: 'SET_COLOR', payload: columnColor })
+    dispatch({ type: 'SET_COLUMN_ID', payload: columnID })
+    dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: true } })
   }
 
   const editColumn = () => {
     // Check if no new column name
-    if (editColumnName.trim() === "") {
+    if (state.forms.editColumnName.trim() === "") {
       console.log("No column name") // TODO: 1. Make Toast
-      setEditColumnModal(false)
+      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })
       return
     }
 
     // Check if column of same name already exists
-    if (columns.some((column, index) => column.name === editColumnName && index !== activeColId)) {
+    if (state.columns.some((column, index) => column.name === state.forms.editColumnName && index !== state.activeColId)) {
       console.log("Column already exists") // TODO: 1. Change to toast
-      setEditColumnModal(false)
+      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })
       return
     }
 
-    const newColor = colors.find((color) => color.from === selectedColor)
+    const newColor = colors.find((color) => color.name === state.selectedColor)
     const newFrom = newColor!.from
     const newTo = newColor!.to
 
-    const updatedColumns = columns.map((col, index) =>
-      index === activeColId ? { ...col, name: editColumnName, from: newFrom, to: newTo } : col
+    const updatedColumns = state.columns.map((col, index) =>
+      index === state.activeColId ? { ...col, name: state.forms.editColumnName, from: newFrom, to: newTo } : col
     )
 
-    setColumns(updatedColumns)
-    setEditColumnName("")
-    setEditColumnModal(false)
+    dispatch({ type: "SET_COLUMN", payload: updatedColumns })
+    dispatch({ type: "RESET_FORMS" })
+    dispatch({ type: 'UPDATE_FORM', payload: { form: 'editColumnName', value: "" } })
+    dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })
   }
 
   const handleChangeBoard = () => {
 
-    const updatedBoards = boards.map((board, index) =>
-      index === activeBoard ? { ...board, columns: columns } : board)
+    const updatedBoards = state.boards.map((board, index) =>
+      index === state.activeBoard ? { ...board, columns: state.columns } : board)
 
     console.log(updatedBoards)
-    setBoards(updatedBoards)
-    setActiveBoard(null)
+    dispatch({ type: "SET_ACTIVE_BOARD", payload: null })
   }
 
   return (
@@ -298,72 +275,84 @@ export default function Home() {
           <h1 className="text-6xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">Canban Board</h1>
 
           {/* Add new task / Add column Area */}
-          {!activeBoard ? (<></>) : (
+          {!state.activeBoard ? (<></>) : (
             <div className="flex gap-4">
               <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
                 <input
                   type="text"
-                  value={newTask}
-                  onChange={(e) => setNewTask(e.target.value)}
+                  value={state.forms.newTask}
+                  onChange={(e) => dispatch({
+                    type: "UPDATE_FORM",
+                    payload: { form: "newTask", value: e.target.value }
+                  })}
                   placeholder="Add a new task..."
                   className="flex-grow p-3 bg-zinc-700 text-white"
                   onKeyDown={(e) => e.key === "Enter" && addNewTask()} />
 
                 <select
-                  value={activeColId}
+                  value={state.activeColId}
                   onChange={(e) => setActiveCol(e.target.value)}
                   className="p-3 bg-zinc-700 text-white border-0 border-l border-zinc-600">
-                  {Object.keys(columns).map((columnId) => (
-                    <option value={columnId} key={columnId}> {columns[Number(columnId)].name} </option>
+                  {Object.keys(state.columns).map((columnId) => (
+                    <option value={columnId} key={columnId}> {state.columns[Number(columnId)].name} </option>
                   ))}
                 </select>
 
-                <Button
-                  text="Add"
-                  action={addNewTask} />
+                <button
+                  onClick={() => addNewTask()}
+                  className="px-6 bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
+                  font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
+                  duration-200 cursor-pointer">
+                  Add
+                </button>
 
               </div>
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addColumn', isOpen: true } })}
+                className="px-6 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
+              font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
+              duration-200 cursor-pointer">
+                Add Column
+              </button>
 
-              <Button
-                text="Add Column"
-                action={setIsAddModalOpen} />
-
-              <Button
-                text="Change Board"
-                action={handleChangeBoard} />
+              <button
+                onClick={() => handleChangeBoard()}
+                className="px-6 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
+              font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
+              duration-200 cursor-pointer">
+                Change Board
+              </button>
             </div>
           )}
 
           {/* Board Area */}
           <div className="flex gap-6 overflow-x-auto pb-6 w-full justify-center">
-            {/* Column */}
-            {/* TODO: 1. Make into separate component */}
-            {boards.length === 0 ? (
+            {state.boards.length === 0 ? (
               <button
-                onClick={() => setAddBoardModal(true)}
+                onClick={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: true } })}
                 className="p-3 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
                 font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
                 duration-200 cursor-pointer">
                 Create New Board
               </button>
             ) : (
-              !activeBoard ? (
+              !state.activeBoard ? (
                 <div className="flex flex-col shrink-0 w-80 bg-zinc-800 rounded-lg shadow-xl">
                   <div className="p-4 min-h-64 max-h-96">
                     {
-                      Object.keys(boards).map((boardID) => (
+                      Object.keys(state.boards).map((boardID) => (
                         <div
                           onClick={() => openBoard(Number(boardID) + 1)}
                           key={boardID}
                           className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-pointer
                           flex items-center justify-between transform transition-all duration-200
                           hover:scale-105 hover:shadow-lg hover:bg-zinc-600">
-                          <span className="mr-2">{boards[Number(boardID)].name}</span>
+                          <span className="mr-2">{state.boards[Number(boardID)].name}</span>
                         </div>
                       ))
                     }
                     <div
-                      onClick={() => setAddBoardModal(true)}
+                      onClick={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: true } })}
                       className="p-4 mb-3 bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400 
                         text-white rounded-lg shadow-md cursor-pointer flex items-center justify-center
                           transform transition-all duration-200 hover:scale-105 hover:shadow-lg 
@@ -373,11 +362,11 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                Object.keys(columns).map((_, index) => (
+                Object.keys(state.columns).map((_, index) => (
                   <ColumnComponent key={index}
                     handleDragOver={handleDragOver}
                     handleDrop={handleDrop}
-                    columns={columns}
+                    columns={state.columns}
                     index={index}
                     handleEditColumn={handleEditColumn}
                     removeColumn={removeColumn}
@@ -392,33 +381,22 @@ export default function Home() {
 
       {/* Add column modal */}
       <AddColumn
-        isOpen={isAddModalOpen}
-        selectedColor={selectedColor}
-        onClose={setIsAddModalOpen}
-        inputValue={newColumn}
-        onInputChange={setNewColumn}
-        onPress={addNewColumn}
-        setColor={setSelectedColor} />
+        state={state}
+        dispatch={dispatch}
+        onPress={addNewColumn} />
 
       {/* Add board modal */}
       <AddBoard
-        isOpen={addBoardModal}
-        onClose={setAddBoardModal}
-        inputValue={newBoard}
-        onInputChange={setNewBoard}
+        state={state}
+        dispatch={dispatch}
         onPress={addNewBoard}
         onReset={handleResetNewBoard}
-        columnNumber={colNum}
-        columnNames={colNames}
-        columnColors={colColors}
-        openColPicker={openColPicker!}
-        setColumnNames={setColNames}
-        setColumnColors={setColColors}
+        openColPicker={openColPicker!} // use custom hook to make sure of this?
         setOpenColPicker={setOpenColPicker}
         handleNewBoardColumns={handleNewBoardColumns} />
 
-      {/* Edit board modal */}
-      <Modal isOpen={editBoardModal} onClose={() => setEditBoardModal(false)}>
+      {/* Edit task modal */}
+      <Modal isOpen={state.modals.editTask} onClose={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editTask', isOpen: false } })}>
         <div>
 
         </div>
@@ -426,13 +404,9 @@ export default function Home() {
 
       {/* Edit column modal */}
       <EditColumn
-        isOpen={editColumnModal}
-        onClose={setEditColumnModal}
-        inputValue={editColumnName}
-        onInputChange={setEditColumnName}
-        onPress={editColumn}
-        selectedColor={selectedColor}
-        setColor={setSelectedColor} />
+        state={state}
+        dispatch={dispatch}
+        onPress={editColumn} />
     </main>
   )
 }
