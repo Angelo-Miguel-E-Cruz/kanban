@@ -10,6 +10,19 @@ export default function Reducer(state: AppState, action: Action) {
         modals: {
           ...state.modals,
           [action.payload.modal]: action.payload.isOpen ?? !state.modals[action.payload.modal]
+        },
+        forms: !action.payload.isOpen
+          ? {
+            newTask: '',
+            newColumn: '',
+            newBoard: '',
+            editColumnName: ''
+          }
+          : state.forms,
+        columnProps: {
+          number: 1,
+          names: [""],
+          colors: [colors[0].class]
         }
       }
 
@@ -50,21 +63,31 @@ export default function Reducer(state: AppState, action: Action) {
         )
       }
 
+    case 'SET_BOARD':
+      return {
+        ...state,
+        boards: action.payload
+      }
+
     case 'SET_COLUMN':
       return {
         ...state,
         columns: action.payload,
-        boards: state.boards.map((board, index) => // this one doesn't work
-          index === state.activeBoard
-            ? { ...board, columns: action.payload }
-            : board
-        )
+        forms: {
+          newTask: '',
+          newColumn: '',
+          newBoard: '',
+          editColumnName: ''
+        },
       }
 
     case 'SET_COLUMN_ON_START':
+      const selectedBoard = state.boards.find((board) => board.id === action.payload)
+      const boardColumns = selectedBoard ? selectedBoard.columns : []
       return {
         ...state,
-        columns: state.boards[action.payload - 1].columns
+        columns: boardColumns,
+        activeColId: boardColumns ? boardColumns[0].id : 0
       }
 
     case 'SET_ACTIVE_BOARD':
@@ -99,16 +122,10 @@ export default function Reducer(state: AppState, action: Action) {
         }
       }
 
-    case 'SET_COLUMN_ID':
+    case 'SET_PROPERTY':
       return {
         ...state,
-        activeColId: action.payload
-      }
-
-    case 'SET_COLOR':
-      return {
-        ...state,
-        selectedColor: action.payload
+        [action.payload.type]: action.payload.value
       }
 
     default:

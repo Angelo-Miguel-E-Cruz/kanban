@@ -41,7 +41,7 @@ export default function AddColumn(
               {colors.map((color) => (
                 <button
                   key={color.class}
-                  onClick={() => dispatch({ type: 'SET_COLOR', payload: color.name })}
+                  onClick={() => dispatch({ type: 'SET_PROPERTY', payload: { type: 'selectedColor', value: color.name } })}
                   className={`w-12 h-12 rounded-lg transition-all duration-200 hover:scale-110 focus:scale-110 cursor-pointer ${color.class}
                     ${state.selectedColor === color.name ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""}
                     `}

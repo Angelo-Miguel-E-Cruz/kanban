@@ -2,12 +2,15 @@
 
 import { useReducer, useState } from "react"
 import Modal from "../components/Modals/modal"
-import { colors, Items, Column, Board, DraggedItem, initialState } from "../utilities/exports"
+import { colors, Items, Column, Board, DraggedItem, initialState, generateID } from "../utilities/exports"
 import AddColumn from "@/components/Modals/AddColumnModal"
 import AddBoard from "@/components/Modals/AddBoardModal"
 import EditColumn from "@/components/Modals/EditColumnModal"
 import ColumnComponent from "@/components/Board/Column"
 import Reducer from "@/utilities/reducer"
+import * as hooks from "@/utilities/hooks"
+
+
 
 export default function Home() {
 
@@ -16,25 +19,27 @@ export default function Home() {
 
   // Functions
   // TODO: 1. Put in own ts file?
+
+
   const addNewTask = () => {
+
     if (state.forms.newTask.trim() === "") {
       console.log("No board name") // TODO: 1. Make Toast
       return
     }
 
     const newItem: Items = {
-      id: Date.now().toString(),
+      id: generateID(),
       content: state.forms.newTask
     }
 
-    const updatedColumns: Column[] = state.columns.map((column, index) =>
-      index === state.activeColId
+    const updatedColumns: Column[] = state.columns.map((column) =>
+      column.id === state.activeColId
         ? { ...column, items: [...column.items, newItem] }
         : column
     )
 
     dispatch({ type: "SET_COLUMN", payload: updatedColumns })
-    dispatch({ type: "RESET_FORMS" })
   }
 
   const addNewColumn = () => {
@@ -56,9 +61,8 @@ export default function Home() {
     const fromColor = headerColor!.from
     const toColor = headerColor!.to
 
-    const newColID = state.columns.length
     const newCol: Column = {
-      id: newColID + 1,
+      id: generateID(),
       name: state.forms.newColumn,
       items: [],
       from: fromColor,
@@ -68,33 +72,12 @@ export default function Home() {
     const updatedColumns = [...state.columns, newCol]
 
     dispatch({ type: 'SET_COLUMN', payload: updatedColumns })
-    dispatch({ type: "RESET_FORMS" })
-    dispatch({ type: 'SET_COLOR', payload: initialState.selectedColor })
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'selectedColor', value: initialState.selectedColor } })
     dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addColumn', isOpen: false } })
   }
 
   const addNewBoard = () => {
-    var validNewBoard = true
-    // Check if no new board name
-    if (state.forms.newBoard.trim() === "") {
-      console.log("No board name") // TODO: 1. Make Toast
-      validNewBoard = false
-      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
-    }
-
-    // Check if column of same name already exists
-    if (state.boards.some((board) => board.name === state.forms.newBoard)) {
-      console.log("Board already exists") // TODO: 1. Change to toast
-      validNewBoard = false
-      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
-    }
-
-    // Check if some column names are empty or just spaces
-    if (state.columnProps.names.some(name => name.trim() === "")) {
-      console.log("Column names can not be empty") // TODO: 1. Change to toast
-      validNewBoard = false
-      dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
-    }
+    const validNewBoard = hooks.useBoardValidation(state.forms.newBoard, state.columnProps.names, state.boards)
 
     if (validNewBoard) {
       var newCols: Column[] = []
@@ -103,7 +86,7 @@ export default function Home() {
         const from = colorObj!.from
         const to = colorObj!.to
         const newCol: Column = {
-          id: index + 1,
+          id: generateID(),
           name: name,
           items: [],
           from: from,
@@ -113,7 +96,7 @@ export default function Home() {
       })
 
       const newB: Board = {
-        id: state.boards.length + 1,
+        id: generateID(),
         name: state.forms.newBoard,
         columnNumber: state.columnProps.number,
         columns: newCols
@@ -125,19 +108,13 @@ export default function Home() {
     dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
   }
 
-  const setActiveCol = (columnId: string) => {
-    const colId = parseInt(columnId, 10)
-    dispatch({ type: 'SET_COLUMN_ID', payload: colId })
+  const setActiveCol = (columnId: number) => {
+    console.log(columnId)
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'activeColId', value: columnId } })
   }
 
-  const removeTask = (columnId: number, taskId: string) => {
-    const updatedColumns: Column[] = state.columns.map((column, index) =>
-      index === columnId
-        ? { ...column, items: column.items.filter((item) => item.id !== taskId) }
-        : column
-    )
-
-    dispatch({ type: 'SET_COLUMN', payload: updatedColumns })
+  const removeTask = (columnId: number, taskId: number) => {
+    dispatch({ type: 'REMOVE_TASK', payload: { columnIndex: columnId, taskId: taskId } })
   }
 
   const removeColumn = (colName: string) => {
@@ -148,7 +125,6 @@ export default function Home() {
 
     const updatedColumns = state.columns.filter((column) => column.name !== colName)
     dispatch({ type: "SET_COLUMN", payload: updatedColumns })
-    dispatch({ type: "RESET_FORMS" })
   }
 
   const handleDragStart = (columnId: number, item: Items) => {
@@ -156,7 +132,7 @@ export default function Home() {
       columnId: columnId,
       item: item
     }
-    dispatch({ type: 'SET_DRAGGED_ITEM', payload: draggedItem })
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'draggedItem', value: draggedItem } })
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -172,46 +148,31 @@ export default function Home() {
 
     if (sourceColumnId === targetColumnId) return
 
-    const updatedColumns = state.columns.map((column, index) =>
-      index === targetColumnId
+    const updatedColumns = state.columns.map((column) =>
+      column.id === targetColumnId
         ? { ...column, items: [...column.items, item] }
-        : index === sourceColumnId
+        : column.id === sourceColumnId
           ? { ...column, items: column.items.filter((i) => i.id != item.id) }
           : column
     )
 
     dispatch({ type: "SET_COLUMN", payload: updatedColumns })
-    dispatch({ type: "RESET_FORMS" })
-    dispatch({ type: 'SET_DRAGGED_ITEM', payload: null })
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'draggedItem', value: null } })
   }
 
   const handleNewBoardColumns = (num: number) => {
+    const columnArr = hooks.useCustomProps(state.columnProps.names, num, "name")
+    const colorArr = hooks.useCustomProps(state.columnProps.colors, num, "color")
+
     dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'number', value: num } })
-
-    var columnArr = state.columnProps.names
-
-    if (num > columnArr.length) {
-      columnArr = [...columnArr, ...Array(num - columnArr.length).fill("")]
-    } else {
-      columnArr = columnArr.slice(0, num)
-    }
-
     dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'names', value: columnArr } })
-
-    var colorArr = state.columnProps.colors
-
-    if (num > colorArr.length) {
-      colorArr = [...colorArr, ...Array(num - colorArr.length).fill(colors[0].class)]
-    } else {
-      colorArr = colorArr.slice(0, num)
-    }
-
     dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'colors', value: colorArr } })
   }
 
   const handleResetNewBoard = () => {
     dispatch({ type: 'RESET_FORMS' })
-    dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'names', value: [""] } })
+    dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'names', value: initialState.columnProps.names } })
+    dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'colors', value: initialState.columnProps.colors } })
     dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: false } })
     setOpenColPicker(null)
   }
@@ -222,11 +183,13 @@ export default function Home() {
   }
 
   const handleEditColumn = (columnID: number) => {
-    const columnColor: string = colors.find((color) => color.from === state.columns[columnID].from)!.name
+    const columnMatch = state.columns.find((column) => column.id === columnID)
+    const colorMatch = columnMatch ? colors.find((color) => color.from === columnMatch.from) : colors[0]
+    const columnColor = colorMatch?.name || colors[0].name
 
-    dispatch({ type: 'UPDATE_FORM', payload: { form: 'editColumnName', value: state.columns[columnID].name } })
-    dispatch({ type: 'SET_COLOR', payload: columnColor })
-    dispatch({ type: 'SET_COLUMN_ID', payload: columnID })
+    dispatch({ type: 'UPDATE_FORM', payload: { form: 'editColumnName', value: columnMatch!.name } })
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'selectedColor', value: columnColor } })
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'activeColId', value: columnID } })
     dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: true } })
   }
 
@@ -239,7 +202,7 @@ export default function Home() {
     }
 
     // Check if column of same name already exists
-    if (state.columns.some((column, index) => column.name === state.forms.editColumnName && index !== state.activeColId)) {
+    if (state.columns.some((column) => column.name === state.forms.editColumnName && column.id !== state.activeColId)) {
       console.log("Column already exists") // TODO: 1. Change to toast
       dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })
       return
@@ -249,22 +212,20 @@ export default function Home() {
     const newFrom = newColor!.from
     const newTo = newColor!.to
 
-    const updatedColumns = state.columns.map((col, index) =>
-      index === state.activeColId ? { ...col, name: state.forms.editColumnName, from: newFrom, to: newTo } : col
+    const updatedColumns = state.columns.map((column) =>
+      column.id === state.activeColId ? { ...column, name: state.forms.editColumnName, from: newFrom, to: newTo } : column
     )
 
     dispatch({ type: "SET_COLUMN", payload: updatedColumns })
-    dispatch({ type: "RESET_FORMS" })
-    dispatch({ type: 'UPDATE_FORM', payload: { form: 'editColumnName', value: "" } })
     dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })
   }
 
   const handleChangeBoard = () => {
 
-    const updatedBoards = state.boards.map((board, index) =>
-      index === state.activeBoard ? { ...board, columns: state.columns } : board)
+    const updatedBoards = state.boards.map((board) =>
+      board.id === state.activeBoard ? { ...board, columns: state.columns } : board)
 
-    console.log(updatedBoards)
+    dispatch({ type: 'SET_BOARD', payload: updatedBoards })
     dispatch({ type: "SET_ACTIVE_BOARD", payload: null })
   }
 
@@ -291,10 +252,10 @@ export default function Home() {
 
                 <select
                   value={state.activeColId}
-                  onChange={(e) => setActiveCol(e.target.value)}
+                  onChange={(e) => setActiveCol(Number(e.target.value))}
                   className="p-3 bg-zinc-700 text-white border-0 border-l border-zinc-600">
-                  {Object.keys(state.columns).map((columnId) => (
-                    <option value={columnId} key={columnId}> {state.columns[Number(columnId)].name} </option>
+                  {state.columns.map((column) => (
+                    <option value={column.id} key={column.id}> {column.name} </option>
                   ))}
                 </select>
 
@@ -340,14 +301,14 @@ export default function Home() {
                 <div className="flex flex-col shrink-0 w-80 bg-zinc-800 rounded-lg shadow-xl">
                   <div className="p-4 min-h-64 max-h-96">
                     {
-                      Object.keys(state.boards).map((boardID) => (
+                      state.boards.map((board) => (
                         <div
-                          onClick={() => openBoard(Number(boardID) + 1)}
-                          key={boardID}
+                          onClick={() => openBoard(board.id)}
+                          key={board.id}
                           className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-pointer
                           flex items-center justify-between transform transition-all duration-200
                           hover:scale-105 hover:shadow-lg hover:bg-zinc-600">
-                          <span className="mr-2">{state.boards[Number(boardID)].name}</span>
+                          <span className="mr-2">{board.name}</span>
                         </div>
                       ))
                     }
@@ -362,12 +323,11 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                Object.keys(state.columns).map((_, index) => (
-                  <ColumnComponent key={index}
+                state.columns.map((column) => (
+                  <ColumnComponent key={column.id}
                     handleDragOver={handleDragOver}
                     handleDrop={handleDrop}
-                    columns={state.columns}
-                    index={index}
+                    column={column}
                     handleEditColumn={handleEditColumn}
                     removeColumn={removeColumn}
                     handleDragStart={handleDragStart}

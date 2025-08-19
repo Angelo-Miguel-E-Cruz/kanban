@@ -10,7 +10,7 @@ export const colors = [
 ]
 
 export interface Items {
-  id: string,
+  id: number,
   content: string
 }
 
@@ -105,16 +105,21 @@ export type Action =
   // Boards Actions
   | { type: 'SET_ACTIVE_BOARD'; payload: number | null }
   | { type: 'ADD_BOARD'; payload: Board }
+  | { type: 'SET_BOARD'; payload: Board[] }
 
   // Column Actions
   | { type: 'SET_COLUMN_ON_START'; payload: number }
-  | { type: 'SET_COLUMN_ID'; payload: number }
   | { type: 'SET_COLUMN'; payload: Column[] }
-  | { type: 'REMOVE_COLUMN'; payload: string }
-  | { type: 'SET_COLOR'; payload: string }
   | { type: 'SET_COLUMN_PROPS'; payload: { type: keyof AppState['columnProps']; value: number | string[] | string } }
 
   // Task Actions
   | { type: 'ADD_TASK'; payload: { columnIndex: number; task: Items } }
-  | { type: 'REMOVE_TASK'; payload: { columnIndex: number; taskId: string } }
-  | { type: 'SET_DRAGGED_ITEM'; payload: DraggedItem | null }
+  | { type: 'REMOVE_TASK'; payload: { columnIndex: number; taskId: number } }
+
+  // General Actions
+  | { type: 'SET_PROPERTY'; payload: { type: keyof AppState; value: any } }
+
+
+export function generateID(): number {
+  return Date.now() + Math.floor(Math.random() * 1000)
+}

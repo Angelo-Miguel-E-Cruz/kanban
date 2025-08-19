@@ -5,7 +5,7 @@ interface TaskProps {
   index: number,
   item: Items,
   handleDragStart: (columnID: number, item: Items) => void,
-  removeTask: (columnID: number, taskID: string) => void
+  removeTask: (columnID: number, taskID: number) => void
 }
 
 export default function Task({ index, item, handleDragStart, removeTask }: TaskProps) {
