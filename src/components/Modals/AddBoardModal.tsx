@@ -1,5 +1,5 @@
 import Modal from "./modal"
-import { colors, Action, AppState } from "@/utilities/exports"
+import { colors, Action } from "@/utilities/exports"
 
 interface AddColumnProps {
   isOpen: boolean,

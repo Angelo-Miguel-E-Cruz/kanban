@@ -1,5 +1,5 @@
 import Modal from "./modal"
-import { colors, Action, AppState } from "@/utilities/exports"
+import { Action } from "@/utilities/exports"
 
 interface EditTaskProps {
   isOpen: boolean,

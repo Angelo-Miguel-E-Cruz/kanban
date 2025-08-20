@@ -1,7 +1,6 @@
 "use client"
 
 import { useReducer, useState } from "react"
-import Modal from "../components/Modals/modal"
 import { colors, Items, Column, Board, DraggedItem, initialState, generateID } from "../utilities/exports"
 import AddColumn from "@/components/Modals/AddColumnModal"
 import AddBoard from "@/components/Modals/AddBoardModal"
@@ -15,10 +14,6 @@ export default function Home() {
 
   const [state, dispatch] = useReducer(Reducer, initialState)
   const [openColPicker, setOpenColPicker] = useState<number | null>(null)
-
-  // Functions
-  // TODO: 1. Put in own ts file?
-
 
   const addNewTask = () => {
 
@@ -79,7 +74,7 @@ export default function Home() {
     const validNewBoard = hooks.useBoardValidation(state.forms.newBoard, state.columnProps.names, state.boards)
 
     if (validNewBoard) {
-      var newCols: Column[] = []
+      let newCols: Column[] = []
       state.columnProps.names.map((name, index) => {
         const colorObj = colors.find(c => c.class === state.columnProps.colors[index])
         const from = colorObj!.from
@@ -298,53 +293,59 @@ export default function Home() {
           )}
 
           {/* Board Area */}
-          <div className="flex gap-6 overflow-x-auto pb-6 w-full justify-center">
+          <div className="flex gap-6 overflow-x-auto pb-6 w-full">
             {state.boards.length === 0 ? (
-              <button
-                onClick={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: true } })}
-                className="p-3 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
+              <div className="flex w-full justify-center">
+                <button
+                  onClick={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: true } })}
+                  className="p-3 rounded-lg bg-gradient-to-r  from-yellow-600 to-amber-500 text-white 
                 font-medium hover:from-yellow-500 hover:to-amber-500 transition-all
                 duration-200 cursor-pointer">
-                Create New Board
-              </button>
+                  Create New Board
+                </button>
+              </div>
             ) : (
               !state.activeBoard ? (
-                <div className="flex flex-col shrink-0 w-80 bg-zinc-800 rounded-lg shadow-xl">
-                  <div className="p-4 min-h-64 max-h-96">
-                    {
-                      state.boards.map((board) => (
-                        <div
-                          onClick={() => openBoard(board.id)}
-                          key={board.id}
-                          className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-pointer
+                <div className="flex w-full justify-center">
+                  <div className="flex flex-col shrink-0 w-80 bg-zinc-800 rounded-lg shadow-xl">
+                    <div className="p-4 min-h-64 max-h-96">
+                      {
+                        state.boards.map((board) => (
+                          <div
+                            onClick={() => openBoard(board.id)}
+                            key={board.id}
+                            className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-pointer
                           flex items-center justify-between transform transition-all duration-200
                           hover:scale-105 hover:shadow-lg hover:bg-zinc-600">
-                          <span className="mr-2">{board.name}</span>
-                        </div>
-                      ))
-                    }
-                    <div
-                      onClick={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: true } })}
-                      className="p-4 mb-3 bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400 
+                            <span className="mr-2">{board.name}</span>
+                          </div>
+                        ))
+                      }
+                      <div
+                        onClick={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'addBoard', isOpen: true } })}
+                        className="p-4 mb-3 bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400 
                         text-white rounded-lg shadow-md cursor-pointer flex items-center justify-center
                           transform transition-all duration-200 hover:scale-105 hover:shadow-lg 
                           hover:from-yellow-500 hover:via-amber-600 hover:to-rose-500">
-                      <span>Add New Board</span>
+                        <span>Add New Board</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                state.columns.map((column) => (
-                  <ColumnComponent key={column.id}
-                    handleEditTask={handleEditTask}
-                    handleDragOver={handleDragOver}
-                    handleDrop={handleDrop}
-                    column={column}
-                    handleEditColumn={handleEditColumn}
-                    removeColumn={removeColumn}
-                    handleDragStart={handleDragStart}
-                    removeTask={removeTask} />
-                ))
+                <div className="flex gap-6 min-w-max mx-auto">
+                  {state.columns.map((column) => (
+                    <ColumnComponent key={column.id}
+                      handleEditTask={handleEditTask}
+                      handleDragOver={handleDragOver}
+                      handleDrop={handleDrop}
+                      column={column}
+                      handleEditColumn={handleEditColumn}
+                      removeColumn={removeColumn}
+                      handleDragStart={handleDragStart}
+                      removeTask={removeTask} />
+                  ))}
+                </div>
               )
             )}
           </div>

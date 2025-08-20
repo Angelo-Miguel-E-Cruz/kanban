@@ -122,7 +122,7 @@ export type Action =
   | { type: 'EDIT_TASK' }
 
   // General Actions
-  | { type: 'SET_PROPERTY'; payload: { type: keyof AppState; value: any } }
+  | { type: 'SET_PROPERTY'; payload: { type: keyof AppState; value: number | string | DraggedItem | null } }
 
 
 export function generateID(): number {

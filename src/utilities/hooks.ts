@@ -1,7 +1,7 @@
 import { colors, Board } from "./exports"
 
 export function useBoardValidation(newBoardName: string, newColumnNames: string[], existingBoard: Board[]) {
-  var validNewBoard = true
+  let validNewBoard = true
   // Check if no new board name
   if (newBoardName.trim() === "") {
     console.log("No board name") // TODO: 1. Make Toast
