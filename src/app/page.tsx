@@ -74,7 +74,7 @@ export default function Home() {
     const validNewBoard = hooks.useBoardValidation(state.forms.newBoard, state.columnProps.names, state.boards)
 
     if (validNewBoard) {
-      let newCols: Column[] = []
+      const newCols: Column[] = []
       state.columnProps.names.map((name, index) => {
         const colorObj = colors.find(c => c.class === state.columnProps.colors[index])
         const from = colorObj!.from
