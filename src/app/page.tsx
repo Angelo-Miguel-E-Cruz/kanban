@@ -6,11 +6,10 @@ import { colors, Items, Column, Board, DraggedItem, initialState, generateID } f
 import AddColumn from "@/components/Modals/AddColumnModal"
 import AddBoard from "@/components/Modals/AddBoardModal"
 import EditColumn from "@/components/Modals/EditColumnModal"
+import EditTask from "@/components/Modals/EditTaskModal"
 import ColumnComponent from "@/components/Board/Column"
 import Reducer from "@/utilities/reducer"
 import * as hooks from "@/utilities/hooks"
-
-
 
 export default function Home() {
 
@@ -117,6 +116,17 @@ export default function Home() {
     dispatch({ type: 'REMOVE_TASK', payload: { columnIndex: columnId, taskId: taskId } })
   }
 
+  const handleEditTask = (columnId: number, taskId: number) => {
+    const task = state.columns.find((column) => column.id === columnId)
+      ?.items.find((i) => i.id === taskId)?.content
+
+    console.log(task)
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'activeColId', value: columnId } })
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'taskId', value: taskId } })
+    dispatch({ type: 'UPDATE_FORM', payload: { form: 'editTaskName', value: task! } })
+    dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editTask', isOpen: true } })
+  }
+
   const removeColumn = (colName: string) => {
     if (state.columns.length === 1) {
       console.log("Board must have at least 1 column") // TODO: 1. Make toast 
@@ -218,6 +228,7 @@ export default function Home() {
 
     dispatch({ type: "SET_COLUMN", payload: updatedColumns })
     dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })
+    dispatch({ type: 'SET_PROPERTY', payload: { type: 'activeColId', value: state.columns[0].id } })
   }
 
   const handleChangeBoard = () => {
@@ -325,6 +336,7 @@ export default function Home() {
               ) : (
                 state.columns.map((column) => (
                   <ColumnComponent key={column.id}
+                    handleEditTask={handleEditTask}
                     handleDragOver={handleDragOver}
                     handleDrop={handleDrop}
                     column={column}
@@ -341,13 +353,19 @@ export default function Home() {
 
       {/* Add column modal */}
       <AddColumn
-        state={state}
+        isOpen={state.modals.addColumn}
+        inputValue={state.forms.newColumn}
+        selectedColor={state.selectedColor}
         dispatch={dispatch}
         onPress={addNewColumn} />
 
       {/* Add board modal */}
       <AddBoard
-        state={state}
+        isOpen={state.modals.addBoard}
+        inputValue={state.forms.newBoard}
+        columnNumber={state.columnProps.number}
+        columnColors={state.columnProps.colors}
+        columnNames={state.columnProps.names}
         dispatch={dispatch}
         onPress={addNewBoard}
         onReset={handleResetNewBoard}
@@ -356,15 +374,17 @@ export default function Home() {
         handleNewBoardColumns={handleNewBoardColumns} />
 
       {/* Edit task modal */}
-      <Modal isOpen={state.modals.editTask} onClose={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editTask', isOpen: false } })}>
-        <div>
-
-        </div>
-      </Modal>
+      <EditTask
+        isOpen={state.modals.editTask}
+        inputValue={state.forms.editTaskName}
+        dispatch={dispatch}>
+      </EditTask>
 
       {/* Edit column modal */}
       <EditColumn
-        state={state}
+        isOpen={state.modals.editColumn}
+        inputValue={state.forms.editColumnName}
+        selectedColor={state.selectedColor}
         dispatch={dispatch}
         onPress={editColumn} />
     </main>

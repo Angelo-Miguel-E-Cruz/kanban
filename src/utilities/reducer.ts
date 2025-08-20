@@ -1,4 +1,4 @@
-import { colors, Action, AppState } from "@/utilities/exports"
+import { colors, Action, AppState, initialState } from "@/utilities/exports"
 
 export default function Reducer(state: AppState, action: Action) {
   const { type } = action
@@ -12,18 +12,14 @@ export default function Reducer(state: AppState, action: Action) {
           [action.payload.modal]: action.payload.isOpen ?? !state.modals[action.payload.modal]
         },
         forms: !action.payload.isOpen
-          ? {
-            newTask: '',
-            newColumn: '',
-            newBoard: '',
-            editColumnName: ''
-          }
+          ? initialState.forms
           : state.forms,
         columnProps: {
           number: 1,
           names: [""],
           colors: [colors[0].class]
-        }
+        },
+        selectedColor: action.payload.modal === 'addColumn' ? initialState.selectedColor : state.selectedColor
       }
 
     case 'UPDATE_FORM':
@@ -38,8 +34,8 @@ export default function Reducer(state: AppState, action: Action) {
     case 'ADD_TASK':
       return {
         ...state,
-        columns: state.columns.map((column, index) =>
-          index === action.payload.columnIndex
+        columns: state.columns.map((column) =>
+          column.id === action.payload.columnIndex
             ? { ...column, items: [...column.items, action.payload.task] }
             : column
         ),
@@ -56,12 +52,13 @@ export default function Reducer(state: AppState, action: Action) {
     case 'REMOVE_TASK':
       return {
         ...state,
-        columns: state.columns.map((column, index) =>
-          index === action.payload.columnIndex
+        columns: state.columns.map((column) =>
+          column.id === action.payload.columnIndex
             ? { ...column, items: column.items.filter(item => item.id !== action.payload.taskId) }
             : column
         )
       }
+
 
     case 'SET_BOARD':
       return {
@@ -73,12 +70,7 @@ export default function Reducer(state: AppState, action: Action) {
       return {
         ...state,
         columns: action.payload,
-        forms: {
-          newTask: '',
-          newColumn: '',
-          newBoard: '',
-          editColumnName: ''
-        },
+        forms: initialState.forms,
       }
 
     case 'SET_COLUMN_ON_START':
@@ -100,12 +92,7 @@ export default function Reducer(state: AppState, action: Action) {
     case 'RESET_FORMS':
       return {
         ...state,
-        forms: {
-          newTask: '',
-          newColumn: '',
-          newBoard: '',
-          editColumnName: ''
-        },
+        forms: initialState.forms,
         columnProps: {
           number: 1,
           names: [""],
@@ -126,6 +113,31 @@ export default function Reducer(state: AppState, action: Action) {
       return {
         ...state,
         [action.payload.type]: action.payload.value
+      }
+
+    case 'EDIT_TASK':
+      return {
+        ...state,
+        columns: state.columns.map((column) =>
+          column.id === state.activeColId
+            ? {
+              ...column,
+              items: column.items.map((item) =>
+                item.id === state.taskId
+                  ? { ...item, content: state.forms.editTaskName }
+                  : item
+              ),
+            }
+            : column
+        ),
+        forms: {
+          ...state.forms,
+          editTaskName: ''
+        },
+        modals: {
+          ...state.modals,
+          editTask: false
+        }
       }
 
     default:

@@ -5,10 +5,11 @@ interface TaskProps {
   index: number,
   item: Items,
   handleDragStart: (columnID: number, item: Items) => void,
+  handleEditTask: (columnId: number, taskId: number) => void,
   removeTask: (columnID: number, taskID: number) => void
 }
 
-export default function Task({ index, item, handleDragStart, removeTask }: TaskProps) {
+export default function Task({ index, item, handleDragStart, handleEditTask, removeTask }: TaskProps) {
   return (
     <div
       className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-move
@@ -17,7 +18,7 @@ export default function Task({ index, item, handleDragStart, removeTask }: TaskP
       draggable onDragStart={() => handleDragStart(index, item)}>
       <span className="mr-2">{item.content}</span>
       <button
-        onClick={() => console.log("Editing board...")}
+        onClick={() => handleEditTask(index, item.id)}
         className="ml-auto text-zinc-400 hover:text-red-400 transform-colors duration-200
                                   w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-500">
         <MdOutlineModeEditOutline className="text-lg cursor-pointer" />

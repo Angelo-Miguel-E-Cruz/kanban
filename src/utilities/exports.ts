@@ -51,6 +51,7 @@ export interface AppState {
     newColumn: string
     newBoard: string
     editColumnName: string
+    editTaskName: string
   }
 
   columnProps: {
@@ -61,6 +62,7 @@ export interface AppState {
 
   selectedColor: string
   activeColId: number
+  taskId: number
   draggedItem: DraggedItem | null
 }
 
@@ -80,6 +82,7 @@ export const initialState: AppState = {
     newColumn: "",
     newBoard: "",
     editColumnName: "",
+    editTaskName: ""
   },
 
   columnProps: {
@@ -90,6 +93,7 @@ export const initialState: AppState = {
 
   selectedColor: colors[0].name,
   activeColId: 0,
+  taskId: 0,
   draggedItem: null
 
 }
@@ -115,6 +119,7 @@ export type Action =
   // Task Actions
   | { type: 'ADD_TASK'; payload: { columnIndex: number; task: Items } }
   | { type: 'REMOVE_TASK'; payload: { columnIndex: number; taskId: number } }
+  | { type: 'EDIT_TASK' }
 
   // General Actions
   | { type: 'SET_PROPERTY'; payload: { type: keyof AppState; value: any } }

@@ -2,23 +2,24 @@ import Modal from "./modal"
 import { colors, Action, AppState } from "@/utilities/exports"
 
 interface EditColumnProps {
-  state: AppState
+  isOpen: boolean,
+  inputValue: string,
+  selectedColor: string,
   dispatch: (action: Action) => void,
   onPress: () => void,
 }
 
 export default function EditColumn(
-  { state, dispatch, onPress }: EditColumnProps) {
-  console.log(state.forms.editColumnName)
+  { isOpen, inputValue, selectedColor, dispatch, onPress }: EditColumnProps) {
   return (
-    <Modal isOpen={state.modals.editColumn} onClose={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })}>
+    <Modal isOpen={isOpen} onClose={() => dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'editColumn', isOpen: false } })}>
       <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
         <h1 className="text-3xl font-bold mb-2 text-yellow-500">Edit Column</h1>
         <div className="mb-8 flex flex-col gap-4">
           <div className="flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
             <input
               type="text"
-              value={state.forms.editColumnName}
+              value={inputValue}
               onChange={(e) => dispatch({
                 type: 'UPDATE_FORM',
                 payload: { form: 'editColumnName', value: e.target.value }
@@ -44,7 +45,7 @@ export default function EditColumn(
                   key={color.class}
                   onClick={() => dispatch({ type: 'SET_PROPERTY', payload: { type: 'selectedColor', value: color.name } })}
                   className={`w-12 h-12 rounded-lg transition-all duration-200 hover:scale-110 focus:scale-110 cursor-pointer ${color.class}
-                          ${state.selectedColor === color.name ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""}
+                          ${selectedColor === color.name ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110" : ""}
                           `}
                   aria-label={`Select ${color.name} color`}>
                 </button>

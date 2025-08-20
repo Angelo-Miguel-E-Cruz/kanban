@@ -9,11 +9,12 @@ interface ColumnProps {
   handleEditColumn: (columnID: number) => void,
   removeColumn: (columnName: string) => void,
   handleDragStart: (columnID: number, item: Items) => void,
-  removeTask: (columnID: number, taskID: number) => void
+  removeTask: (columnID: number, taskID: number) => void,
+  handleEditTask: (columnId: number, taskId: number) => void
 }
 
 export default function ColumnComponent(
-  { handleDragOver, handleDrop, column, handleEditColumn, removeColumn, handleDragStart, removeTask }: ColumnProps) {
+  { handleDragOver, handleDrop, column, handleEditColumn, removeColumn, handleDragStart, removeTask, handleEditTask }: ColumnProps) {
   return (
     <div
       className="flex flex-col shrink-0 w-80 bg-zinc-800 rounded-lg shadow-xl"
@@ -46,6 +47,7 @@ export default function ColumnComponent(
         ) : (
           column.items.map((item) => (
             <Task key={item.id}
+              handleEditTask={handleEditTask}
               index={column.id}
               item={item}
               handleDragStart={handleDragStart}

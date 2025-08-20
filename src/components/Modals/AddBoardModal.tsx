@@ -2,7 +2,11 @@ import Modal from "./modal"
 import { colors, Action, AppState } from "@/utilities/exports"
 
 interface AddColumnProps {
-  state: AppState
+  isOpen: boolean,
+  inputValue: string,
+  columnNumber: number,
+  columnNames: string[],
+  columnColors: string[],
   openColPicker: number,
   dispatch: (action: Action) => void,
   onPress: () => void,
@@ -12,10 +16,10 @@ interface AddColumnProps {
 }
 
 export default function AddBoard(
-  { state, dispatch, onPress, onReset, openColPicker, setOpenColPicker, handleNewBoardColumns }: AddColumnProps) {
+  { isOpen, inputValue, columnNumber, columnNames, columnColors, dispatch, onPress, onReset, openColPicker, setOpenColPicker, handleNewBoardColumns }: AddColumnProps) {
 
   return (
-    <Modal isOpen={state.modals.addBoard} onClose={() => onReset()}>
+    <Modal isOpen={isOpen} onClose={() => onReset()}>
       <div className="flex items-center justify-center flex-col gap-4 w-full max-w-6xl">
         <h1 className="text-3xl font-bold mb-2 text-yellow-500">Add New Board</h1>
         <div className="flex gap-4">
@@ -24,7 +28,7 @@ export default function AddBoard(
               <h1 className="mr-4 text-center">Board Name</h1>
               <input
                 type="text"
-                value={state.forms.newBoard}
+                value={inputValue}
                 onChange={(e) => dispatch({
                   type: "UPDATE_FORM",
                   payload: { form: "newBoard", value: e.target.value }
@@ -38,21 +42,21 @@ export default function AddBoard(
               <h1 className="mr-4 text-center">Number of Columns</h1>
               <input
                 type="number"
-                value={state.columnProps.number}
+                value={columnNumber}
                 min={1}
                 onChange={(e) => handleNewBoardColumns(Number(e.target.value))}
                 className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg" />
             </div>
 
             <div className="flex flex-col max-h-45 pt-2 overflow-y-auto">
-              {state.columnProps.names.map((_, index) => (
+              {columnNames.map((_, index) => (
                 <div className="flex mb-4 mr-2 items-center" key={index}>
                   <h1 className="mr-4 text-center">Column No. {index + 1} Name</h1>
                   <input
                     type="text"
-                    value={state.columnProps.names[index]}
+                    value={columnNames[index]}
                     onChange={(e) => {
-                      const newNames = [...state.columnProps.names]
+                      const newNames = [...columnNames]
                       newNames[index] = e.target.value
                       dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'names', value: newNames } })
                     }}
@@ -60,7 +64,7 @@ export default function AddBoard(
                     className="flex-grow p-3 bg-zinc-700 text-white shadow-lg rounded-lg mr-2" />
 
                   <div
-                    className={`w-11 h-11 rounded-lg cursor-pointer ${state.columnProps.colors[index]}`}
+                    className={`w-11 h-11 rounded-lg cursor-pointer ${columnColors[index]}`}
                     onClick={() => setOpenColPicker(openColPicker === index ? null : index)}>
                     {openColPicker === index &&
                       <div className="absolute bottom-37 right-0 bg-zinc-900 p-2 rounded-lg border-1 border-zinc-800 z-10 grid grid-cols-4 gap-2">
@@ -68,12 +72,12 @@ export default function AddBoard(
                           <div
                             key={count}
                             onClick={() => {
-                              const newColors = [...state.columnProps.colors]
+                              const newColors = [...columnColors]
                               newColors[index] = color.class
                               dispatch({ type: 'SET_COLUMN_PROPS', payload: { type: 'colors', value: newColors } })
                             }}
                             className={`w-8 h-8 rounded cursor-pointer ${color.class}
-                              ${state.columnProps.colors[index] === color.class ? "ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110" : ""}`} />
+                              ${columnColors[index] === color.class ? "ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110" : ""}`} />
                         ))}
                       </div>}
                   </div>
